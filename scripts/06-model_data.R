@@ -13,25 +13,32 @@ library(tidyverse)
 library(rstanarm)
 
 #### Read data ####
-analysis_data <- read_csv("data/analysis_data/analysis_data.csv")
+analysis_data <- read_csv("data/02-analysis_data/cleaned_data_state.csv")
 
-### Model data ####
-first_model <-
-  stan_glm(
-    formula = flying_time ~ length + width,
-    data = analysis_data,
-    family = gaussian(),
-    prior = normal(location = 0, scale = 2.5, autoscale = TRUE),
-    prior_intercept = normal(location = 0, scale = 2.5, autoscale = TRUE),
-    prior_aux = exponential(rate = 1, autoscale = TRUE),
-    seed = 853
-  )
+trump_high_quality = analysis_data |>
+  filter(
+    candidate_name == "Donald Trump")
+  # mutate(
+  #   num_trump = round((pct / 100) * sample_size, 0) # Need number not percent for some models
+  # )
+
+# ### Model data ####
+# first_model <-
+#   stan_glm(
+#     formula = flying_time ~ length + width,
+#     data = analysis_data,
+#     family = gaussian(),
+#     prior = normal(location = 0, scale = 2.5, autoscale = TRUE),
+#     prior_intercept = normal(location = 0, scale = 2.5, autoscale = TRUE),
+#     prior_aux = exponential(rate = 1, autoscale = TRUE),
+#     seed = 853
+#   )
 
 
-#### Save model ####
-saveRDS(
-  first_model,
-  file = "models/first_model.rds"
-)
+# # #### Save model ####
+# # saveRDS(
+# #   first_model,
+# #   file = "models/first_model.rds"
+# # )
 
 

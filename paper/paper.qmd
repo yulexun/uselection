@@ -20,10 +20,17 @@ bibliography: references.bib
 
 library(tidyverse)
 library(palmerpenguins)
+library(here)
+library(tibble)
+library(knitr)
 ```
 
 
 # Introduction {#sec-intro}
+
+
+## Estimand
+The estimand for this research paper is the predicted support percentages for Kamala Harris and Donald Trump. The prediction is based on quantifying various polling factors, including sample size, poll scores, and transparency scores, which are used as predictors.
 
 
 
@@ -31,6 +38,95 @@ library(palmerpenguins)
 
 ## Overview
 
+For the data we used in this analysis about the polling result for Kamala Harris and Donalad Trump in 2024 USA president election. \
+- **response variable:** pct(pct: The percentage of the vote or support that the candidate received in the poll) \
+- **numeric predictor:**\
+ sample size(sample_size: The total number of respondents participating in the poll) \
+ timegap(the time gap between the poll start date and the real election date i.e timegap = real US election date - poll start date) \
+ pollscore(A numeric value representing the score or reliability of the pollster in question) \
+- **categorical predictor**
+state(The U.S. state where the poll was conducted or focused) \
+methodology(The method used to conduct the poll)\
+
+
+
+## Measurement
+
+In this dataset, each row represents a polling question that records the variables of interest. Each entry allows us to explore the real-world relationships between polling factors and the support percentage (`pct`) for the candidates Kamala Harris and Donald Trump. This dataset enables an analysis of how various polling characteristics influence the reported support levels for the candidates we are focused.
+
+
+## Clean Data
+The data cleaning process involves several steps to ensure the quality and relevance of the polling data. First, we filter the dataset to retain only poll results with a numeric grade of 2.7 or higher, indicating that the polls are considered reliable. Next, we address missing values in the state attribute: polls with NA in the state column are considered national polls.
+
+We then create a new attribute, days_taken_from_election, which represents the time gap between the poll's start date and the actual U.S. election date. Additionally, we filter the dataset to include only polls conducted after July 21, 2024, the date when Kamala Harris declared her candidacy. Finally, we remove any remaining rows that contain missing values to ensure a clean dataset.
+
+```{r}
+#| label: tbl-cleaned-data
+#| tbl-cap: Sample of cleaned US election data 
+#| echo: false
+#| warning: false
+cleaned_data = read_csv(here("data/02-analysis_data/cleaned_data.csv"))
+
+cleaned_data |>
+  select(pct, sample_size, pollscore, days_taken_from_election, state, methodology, answer) |>
+  head(6) |>
+  kable(
+    col.names = c("pct", "sample_size", "pollscore", "days_taken_from_election","state", "methodology", "answer"),
+    booktabs = TRUE
+    ) 
+```
+
+
+## Basic Statistics Summary for Data
+
+```{r}
+#| label: fig-clean-data-histogram-Harris-Trump
+#| fig-cap: the average PCT vs State for Harris and Trump
+#| echo: false
+#| warning: false
+#| fig-subcap: ["average PCT vs State for Harris","PCT vs State for Trump"]
+#| layout-nrow: 2
+#| fig-width: 40
+#| fig-height: 20
+Harris_data = cleaned_data[cleaned_data$answer == "Harris", ]
+Harris_data |>
+  group_by(state) |>
+  summarise(avg_pct = mean(pct, na.rm = TRUE)) |>
+  ggplot(mapping = aes(x = state, y = avg_pct)) + 
+  geom_col()  +
+  theme_minimal() +
+  labs(
+    x = "State", y = "support percentage(pct)", title = "average support percentage(pct) for Harris per state"
+  )
+
+
+Trump_data = cleaned_data[cleaned_data$answer == "Trump", ]
+Trump_data |>
+  group_by(state) |>
+  summarise(avg_pct = mean(pct, na.rm = TRUE)) |>
+  ggplot(mapping = aes(x = state, y = avg_pct)) + 
+  geom_col()  +
+  theme_minimal() +
+  labs(
+    x = "State", y = "support percentage(pct)", title = "average support percentage(pct) for Harris per state"
+  )
+
+
+# cleaned_data %>%
+#   mutate(month = factor(month, levels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun",
+#                                           "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"))) %>%
+#   ggplot(mapping = aes(x = month, y = total_decedents)) + 
+#   geom_bar(stat = "identity") +
+#   theme_minimal() +
+#   labs(
+#     x = "Month", 
+#     y = "Total Decedents"
+#   )
+```
+
+
+
+<!-- 
 We use the statistical programming language R [@citeR].... Our data [@shelter].... Following @tellingstories, we consider...
 
 Overview text
@@ -65,22 +161,6 @@ Talk more about it.
 
 And also planes (@fig-planes). (You can change the height and width, but don't worry about doing that until you have finished every other aspect of the paper - Quarto will try to make it look nice and the defaults usually work well once you have enough text.)
 
-```{r}
-#| label: fig-planes
-#| fig-cap: Relationship between wing length and width
-#| echo: false
-#| warning: false
-#| message: false
-
-analysis_data <- read_csv(here::here("data/02-analysis_data/analysis_data.csv"))
-
-analysis_data |> 
-  ggplot(aes(x = width, y = length)) +
-  geom_point(alpha = 0.8) +
-  theme_minimal() +
-  labs(x = "Wing width (mm)",
-       y = "Wing length (mm)")
-```
 
 Talk way more about it. 
 
@@ -136,21 +216,7 @@ first_model <-
   readRDS(file = here::here("models/first_model.rds"))
 ```
 
-```{r}
-#| echo: false
-#| eval: true
-#| label: tbl-modelresults
-#| tbl-cap: "Explanatory models of flight time based on wing width and wing length"
-#| warning: false
 
-modelsummary::modelsummary(
-  list(
-    "First model" = first_model
-  ),
-  statistic = "mad",
-  fmt = 2
-)
-```
 
 
 
@@ -188,26 +254,7 @@ In @fig-ppcheckandposteriorvsprior-1 we implement a posterior predictive check. 
 
 In @fig-ppcheckandposteriorvsprior-2 we compare the posterior with the prior. This shows... 
 
-```{r}
-#| eval: true
-#| echo: false
-#| message: false
-#| warning: false
-#| label: fig-ppcheckandposteriorvsprior
-#| layout-ncol: 2
-#| fig-cap: "Examining how the model fits, and is affected by, the data"
-#| fig-subcap: ["Posterior prediction check", "Comparing the posterior with the prior"]
 
-pp_check(first_model) +
-  theme_classic() +
-  theme(legend.position = "bottom")
-
-posterior_vs_prior(first_model) +
-  theme_minimal() +
-  scale_color_brewer(palette = "Set1") +
-  theme(legend.position = "bottom") +
-  coord_flip()
-```
 
 ## Diagnostics
 
@@ -215,20 +262,7 @@ posterior_vs_prior(first_model) +
 
 @fig-stanareyouokay-2 is a Rhat plot. It shows... This suggests...
 
-```{r}
-#| echo: false
-#| eval: true
-#| message: false
-#| warning: false
-#| label: fig-stanareyouokay
-#| fig-cap: "Checking the convergence of the MCMC algorithm"
-#| fig-subcap: ["Trace plot", "Rhat plot"]
-#| layout-ncol: 2
 
-plot(first_model, "trace")
-
-plot(first_model, "rhat")
-```
 
 
 
@@ -237,4 +271,4 @@ plot(first_model, "rhat")
 
 # References
 
-
+ -->
